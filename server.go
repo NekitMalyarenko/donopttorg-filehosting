@@ -9,15 +9,16 @@ import (
 
 const (
 	defaultPort    = "8080"
-	webContentPath = "resources/"
 )
 
 var (
+	webContentPath = ""
 	allowedTypes = []string{"css", "js", "png", "jpg", "svg", "jpeg"}
 )
 
 
-func Start() {
+func StartFileHosting(contentPath string) {
+	webContentPath = contentPath + "/"
 	fasthttp.ListenAndServe(GetPort(), Handler)
 }
 
