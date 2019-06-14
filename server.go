@@ -29,7 +29,7 @@ func Handler(ctx *fasthttp.RequestCtx) {
 		path := ""
 		isAllowed := false
 
-		if url == "" {
+		if url == "" || !strings.Contains(url, ".") {
 			ctx.SendFile(webContentPath + "index.html")
 			return
 		}
