@@ -7,19 +7,15 @@ import (
 	"strings"
 )
 
-const (
-	defaultPort    = "8080"
-)
-
 var (
 	webContentPath = ""
 	allowedTypes = []string{"css", "js", "png", "jpg", "svg", "jpeg"}
 )
 
 
-func StartFileHosting(contentPath string) {
+func GetFileHostingHandler(contentPath string) func(ctx *fasthttp.RequestCtx) {
 	webContentPath = contentPath + "/"
-	fasthttp.ListenAndServe(GetPort(), Handler)
+	return Handler
 }
 
 
@@ -62,14 +58,4 @@ func Handler(ctx *fasthttp.RequestCtx) {
 	} else {
 		ctx.NotFound()
 	}
-}
-
-
-func GetPort() string {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = defaultPort
-	}
-
-	return ":" + port
 }
