@@ -1,4 +1,4 @@
-package donopttorg_filehosting
+package filehosting
 
 import (
 	"os"
