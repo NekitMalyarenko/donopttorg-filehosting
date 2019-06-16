@@ -1,0 +1,55 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "kUcEQu/tRLllOHJK0Mk4YPKYYLQ=",
+			"path": "github.com/klauspost/compress/flate",
+			"revision": "0b31f265a57b6be5370041e088e02a86c75f7173",
+			"revisionTime": "2019-06-13T16:14:14Z"
+		},
+		{
+			"checksumSHA1": "rO+kZTobMQp2VTLPrxLovqFWz3U=",
+			"path": "github.com/klauspost/compress/gzip",
+			"revision": "0b31f265a57b6be5370041e088e02a86c75f7173",
+			"revisionTime": "2019-06-13T16:14:14Z"
+		},
+		{
+			"checksumSHA1": "tyO2QCRaqKdoRFNc5bU2tVRK6x8=",
+			"path": "github.com/klauspost/compress/zlib",
+			"revision": "0b31f265a57b6be5370041e088e02a86c75f7173",
+			"revisionTime": "2019-06-13T16:14:14Z"
+		},
+		{
+			"checksumSHA1": "lPhKP8RF7Fojz8Wm4FtB9Mud9Jw=",
+			"path": "github.com/klauspost/cpuid",
+			"revision": "05a8198c0f5a27739aec358908d7e12c64ce6eb7",
+			"revisionTime": "2019-04-22T09:51:56Z"
+		},
+		{
+			"checksumSHA1": "Y9MRcpDNz4epw59SqGPmnW+ADKk=",
+			"path": "github.com/valyala/bytebufferpool",
+			"revision": "cdfbe9377474227bb42120c1e22fd4433e7f69bf",
+			"revisionTime": "2018-09-05T18:22:47Z"
+		},
+		{
+			"checksumSHA1": "Jo3R7l2rDJQhhNBszT3/NmjSii8=",
+			"path": "github.com/valyala/fasthttp",
+			"revision": "9ba4cef1bac8ebc8fe71123bd20cfc681fdb78a8",
+			"revisionTime": "2019-06-14T14:07:33Z"
+		},
+		{
+			"checksumSHA1": "MQcx71pjgYh+4bAACxQovqIKTVE=",
+			"path": "github.com/valyala/fasthttp/fasthttputil",
+			"revision": "9ba4cef1bac8ebc8fe71123bd20cfc681fdb78a8",
+			"revisionTime": "2019-06-14T14:07:33Z"
+		},
+		{
+			"checksumSHA1": "AnJrfoFr7Pvp3o/cr6VpMsznWew=",
+			"path": "github.com/valyala/fasthttp/stackless",
+			"revision": "9ba4cef1bac8ebc8fe71123bd20cfc681fdb78a8",
+			"revisionTime": "2019-06-14T14:07:33Z"
+		}
+	],
+	"rootPath": "github.com/NekitMalyarenko/donopttorg-filehosting"
+}
