@@ -27,6 +27,12 @@
 			"revisionTime": "2019-04-22T09:51:56Z"
 		},
 		{
+			"checksumSHA1": "bY+8R19SvEaDioAQf4BHYaRpLug=",
+			"path": "github.com/qiangxue/fasthttp-routing",
+			"revision": "6ccdc2a18d8712f842de50ddcb8c9a3d025ddc71",
+			"revisionTime": "2016-02-25T05:06:29Z"
+		},
+		{
 			"checksumSHA1": "Y9MRcpDNz4epw59SqGPmnW+ADKk=",
 			"path": "github.com/valyala/bytebufferpool",
 			"revision": "cdfbe9377474227bb42120c1e22fd4433e7f69bf",
