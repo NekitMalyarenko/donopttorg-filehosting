@@ -8,93 +8,38 @@ import (
 	"io/ioutil"
 	"encoding/json"
 	"github.com/qiangxue/fasthttp-routing"
-	"net/http"
-	"bytes"
 	"strconv"
+	"hash/fnv"
 )
 
 var (
 	webContentPath = ""
 	allowedTypes = []string{"css", "js", "png", "jpg", "svg", "jpeg", "ico"}
 
-	proxyContentPath = ""
-	proxyData = map[string]string{}
-	trustedExternalResources = []string{"https://donopttorg-api.herokuapp.com", "https://fonts.googleapis.com", "https://kit.fontawesome.com"}
+	eTags = map[string]uint32{}
+	cacheAge = "1"
 )
 
 
 func GetFileHostingHandler(contentPath string) func(ctx *fasthttp.RequestCtx) {
 	webContentPath   = contentPath + "/"
-	proxyContentPath = contentPath + "/proxyContent/"
-
-	os.Mkdir(proxyContentPath, os.ModePerm)
 
 	route := routing.New()
+	route.Get("/*", func(c *routing.Context) error {
+		if c.Request.Header.Peek("If-None-Match") != nil {
+			return CacheRevalidationControl(c)
+		} else {
+			return DefaultHandler(c)
+		}
+	})
 	route.NotFound(DefaultHandler)
-	route.Get("/proxy", ProxyHandler)
+	//route.Get("/proxy", ProxyHandler)
 
-	InitManifest()
+	//InitManifest()
+
+	InitETags()
 
 	return route.HandleRequest
-}
-
-
-func ProxyHandler(c *routing.Context) error {
-	if c.Request.URI().QueryArgs().Peek("url") == nil || len(c.Request.URI().QueryArgs().Peek("url")) == 0 {
-		c.Error("url is empty", http.StatusBadRequest)
-		return nil
-	}
-
-	url := string(c.Request.URI().QueryArgs().Peek("url"))
-
-	for k, v := range proxyData {
-		if k == url {
-			c.SendFile(v)
-			c.Response.Header.Add("Cache-Control", "no-cache, no-store, must-revalidate")
-			return nil
-		}
-	}
-
-	fileName := proxyContentPath + strconv.Itoa(len(proxyData)) + ".txt"
-
-	req, err := http.NewRequest("GET", url, bytes.NewBuffer([]byte{}))
-	if err != nil {
-		log.Println(err)
-		c.Error("can't load resource", http.StatusInternalServerError)
-		return nil
-	}
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Println(err)
-		c.Error("can't load resource", http.StatusInternalServerError)
-		return nil
-	}
-	defer resp.Body.Close()
-
-	body, _ := ioutil.ReadAll(resp.Body)
-
-	file, err := os.Create(fileName)
-	if err != nil {
-		log.Println(err)
-		c.Error("can't load resource", http.StatusInternalServerError)
-		return nil
-	}
-	file.Close()
-
-	err = ioutil.WriteFile(fileName, body, 0644)
-	if err != nil {
-		log.Println(err)
-		c.Error("can't load resource", http.StatusInternalServerError)
-		return nil
-	}
-
-	proxyData[url] = fileName
-
-	c.Write(body)
-	c.Response.Header.Add("Cache-Control", "no-cache, no-store, must-revalidate")
-	return nil
 }
 
 
@@ -109,6 +54,8 @@ func DefaultHandler(c *routing.Context) error {
 		isAllowed := false
 
 		if url == "" || !strings.Contains(url, ".") {
+			c.Response.Header.Add("Cache-Control", "public, max-age=" + cacheAge + " must-revalidate")
+			c.Response.Header.Add("ETag", "\"" +  strconv.FormatUint(uint64(eTags[webContentPath + "index.html"]), 10) + "\"")
 			c.SendFile(webContentPath + "index.html")
 			return nil
 		}
@@ -130,8 +77,12 @@ func DefaultHandler(c *routing.Context) error {
 			} else {
 				c.SendFile(path)
 				if !strings.Contains(url, ".svg") {
-					c.Response.Header.Add("Cache-Control", "no-cache, no-store, must-revalidate")
+					//c.Response.Header.Add("Cache-Control", "no-cache, no-store, must-revalidate")
+					c.Response.Header.Add("Cache-Control", "public, max-age=" + cacheAge +" must-revalidate")
+				} else {
+					c.Response.Header.Add("Cache-Control", "public, max-age=31536000")
 				}
+				c.Response.Header.Add("ETag", "\"" +  strconv.FormatUint(uint64(eTags[path]), 10) + "\"")
 
 				return nil
 			}
@@ -145,6 +96,90 @@ func DefaultHandler(c *routing.Context) error {
 		c.NotFound()
 		return nil
 	}
+}
+
+
+func CacheRevalidationControl(c *routing.Context) error {
+	header := string(c.Request.Header.Peek("If-None-Match"))
+	header = strings.Replace(header, "\"", "", -1)
+
+	hash, err := strconv.ParseUint(header, 10, 32)
+	if err != nil {
+		return err
+	}
+
+	url := c.URI().String()
+	if strings.Contains(url, "://") && strings.Contains(url, "/") {
+		url = string([]byte(url)[strings.Index(url, "://") + len("://") + 1:])
+		url = string([]byte(url)[strings.Index(url, "/") + len("/"):])
+		path := ""
+
+		if url == "" || !strings.Contains(url, ".") {
+			path = webContentPath + "index.html"
+
+			if eTags[path] != uint32(hash) {
+				c.SendFile(path)
+			} else {
+				c.SetStatusCode(fasthttp.StatusNotModified)
+			}
+
+			return nil
+		}
+
+		path = webContentPath + url
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			c.NotFound()
+			return nil
+		} else {
+			c.SendFile(path)
+			if eTags[path] != uint32(hash) {
+				c.SendFile(path)
+			} else {
+				c.SetStatusCode(fasthttp.StatusNotModified)
+			}
+			return nil
+		}
+
+	} else {
+		c.NotFound()
+		return nil
+	}
+
+	return nil
+}
+ 
+
+func InitETags() {
+	var handlerDir func(dirPath string)
+	handlerDir = func(dirPath string) {
+		files, err := ioutil.ReadDir(dirPath)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		for _, file := range files {
+
+			if file.IsDir() {
+				handlerDir(dirPath + file.Name() + "/")
+			} else if !strings.Contains(file.Name(), "fasthttp.gz") {
+				name := dirPath + file.Name()
+
+				data, err := ioutil.ReadFile(name)
+				if err != nil {
+					log.Println("while reading file", name, "occured error:", err)
+					break
+				}
+
+				h := fnv.New32a()
+				h.Write(data)
+
+				eTags[name] = h.Sum32()
+			}
+		}
+	}
+
+	handlerDir(webContentPath)
 }
 
 
